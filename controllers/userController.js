@@ -23,7 +23,7 @@ userController.signup = async (req, res) => {
         res.json({
             status: 200,
             message: 'User created',
-            user: newUser
+            user: {...newUser.dataValues, id: encryptedId}
         })
     } catch (error) {
         res.json({
@@ -33,18 +33,19 @@ userController.signup = async (req, res) => {
         })
     }
 }
+
 userController.login = async (req, res) => {
     try {
-        // console.log('req body', req.body);
+        console.log('req body', req.body);
         const foundUser = await user.findOne({
             where: {
                 email: req.body.email
-            }
+            },
+            include: article
         })
         console.log('foundUser', foundUser.dataValues);
         
         const encryptedId = jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
-        foundUser.id = encryptedId
 
         console.log('encryptedId', encryptedId);
         console.log('foundUser', foundUser);
@@ -52,7 +53,7 @@ userController.login = async (req, res) => {
             res.json({
                 status: 200,
                 message: 'User authenticated',
-                user: foundUser
+                user: {...foundUser.dataValues, id: encryptedId}
             })
         } else {
             res.json({
@@ -87,7 +88,7 @@ userController.verify = async (req, res) => {
             res.json({
                 status: 200,
                 message: 'Verified user',
-                user: {...foundUser, id: encryptedId}
+                user: {...foundUser.dataValues, id: encryptedId}
             })
         } else {
             res.json({
@@ -99,6 +100,62 @@ userController.verify = async (req, res) => {
         res.json({
             status: 400,
             message: 'Error in /user/verify',
+            error
+        })
+    }
+}
+
+userController.update = async (req, res) => {
+    try {
+        // let encryptedId = req.headers.authorization
+        // const decryptedId = await jwt.verify(encryptedId, process.env.JWT_SECRET)
+
+        const foundUser = await user.findOne({
+            where: {
+                id: req.headers.authorization
+            }
+        })
+        const updatedUser = await foundUser.update({
+            name: req.body.name,
+            alias: req.body.alias,
+            email: req.body.email,
+            password: req.body.password
+        })
+        console.log('updatedUser', updatedUser);
+
+        const encryptedId = jwt.sign({userId: updatedUser.id}, process.env.JWT_SECRET)
+
+        res.json({
+            status: 200,
+            message: 'User updated',
+            user: updatedUser
+        })
+    } catch (error) {
+        res.json({
+            status: 400,
+            message: 'Error in /users/update',
+            error
+        })
+    }
+}
+
+userController.delete = async (req, res) => {
+    try {
+        const foundUser = await user.findOne({
+            where: {
+                id: req.headers.authorization
+            }
+        })
+        const deletedUser = await foundUser.destroy()
+        res.json({
+            status: 200,
+            message: 'User deleted',
+            user: deletedUser
+        })
+    } catch (error) {
+        res.json({
+            status: 400,
+            message: 'Error in /users/delete',
             error
         })
     }

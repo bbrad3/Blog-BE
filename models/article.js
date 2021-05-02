@@ -15,10 +15,7 @@ module.exports = (sequelize, DataTypes) => {
   };
   article.init({
     title: {
-      type: DataTypes.STRING,
-      validate: {
-        isAlpha: true
-      }
+      type: DataTypes.STRING
     },
     content: {
       type: DataTypes.TEXT
@@ -30,10 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     userId: {
-      type: DataTypes.INTEGER,
-      validate: {
-        isInt: true
-      }
+      type: DataTypes.INTEGER
     }
   }, {
     sequelize,
