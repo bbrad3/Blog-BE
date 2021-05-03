@@ -124,6 +124,13 @@ userController.authorize = async (req, res) => {
                 }
             })
             compare = foundArticle.userId
+        } else if (req.body.commentId) {
+            const foundComment = await comment.findOne({
+                where: {
+                    id: req.body.commentId
+                }
+            })
+            compare = foundComment.userId
         }
         
         console.log('comparison', compare, decryptedId.userId);

@@ -38,4 +38,26 @@ commentController.new = async (req, res) => {
     }
 }
 
+commentController.delete = async (req, res) => {
+    try {
+        const foundComment = await comment.findOne({
+            where: {
+                id: req.params.commentId
+            }
+        })
+        const deletedComment = foundComment.destroy()
+        res.json({
+            status: 200,
+            message: 'Comment deleted',
+            comment: deletedComment
+        })
+    } catch (error) {
+        res.json({
+            status: 400,
+            message: 'Could not delete comment',
+            error
+        })
+    }
+}
+
 module.exports = commentController
