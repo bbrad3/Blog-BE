@@ -16,6 +16,9 @@ app.use('/users', userRouter)
 const articleRouter = require('./routers/articleRouter')
 app.use('/articles', articleRouter)
 
+const commentRouter = require('./routers/commentRouter')
+app.use('/comments', commentRouter)
+
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);

@@ -1,5 +1,5 @@
 const models = require('../models')
-const { user, article } = models
+const { user, article, comment } = models
 const jwt = require('jsonwebtoken')
 
 const articleController = {}
@@ -26,7 +26,8 @@ articleController.one = async (req, res) => {
         const oneArticle = await article.findOne({
             where: {
                 id: req.params.articleId
-            }
+            },
+            include: comment
         })
         res.json({
             status: 200,
