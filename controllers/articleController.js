@@ -6,7 +6,12 @@ const articleController = {}
 
 articleController.all = async (req, res) => {
     try {
-        const allArticles = await article.findAll()
+        const allArticles = await article.findAll({
+            include: [
+                {model: user},
+                {model: comment}
+            ]
+        })
         res.json({
             status: 200,
             message: 'Here are all articles',
@@ -28,7 +33,8 @@ articleController.one = async (req, res) => {
                 id: req.params.articleId
             },
             include: [
-                {model: comment, include: [{model: user}]}
+                {model: comment, include: [{model: user}]},
+                {model: user}
             ]
         })
         res.json({
