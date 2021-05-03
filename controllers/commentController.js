@@ -15,11 +15,19 @@ commentController.new = async (req, res) => {
             articleId: req.body.articleId,
             userId: decryptedId.userId
         })
+        const foundComment = await comment.findOne({
+            where: {
+                id: newComment.id
+            },
+            include: [
+                {model: user}
+            ]
+        })
         console.log('newComment', newComment);
         res.json({
             status: 200,
             message: 'Comment created',
-            comment: newComment
+            comment: foundComment,
         })
     } catch (error) {
         res.json({

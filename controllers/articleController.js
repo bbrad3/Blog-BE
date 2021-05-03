@@ -27,7 +27,9 @@ articleController.one = async (req, res) => {
             where: {
                 id: req.params.articleId
             },
-            include: comment
+            include: [
+                {model: comment, include: [{model: user}]}
+            ]
         })
         res.json({
             status: 200,
@@ -45,9 +47,9 @@ articleController.one = async (req, res) => {
 
 articleController.new = async (req, res) => {
     try {
-        console.log('headers', req.headers);
+        // console.log('headers', req.headers);
         const encryptedId = req.headers.authorization
-        console.log('encryptedId', encryptedId);
+        // console.log('encryptedId', encryptedId);
         const decryptedId = await jwt.verify(encryptedId, process.env.JWT_SECRET)
 
         const newArticle = await article.create({

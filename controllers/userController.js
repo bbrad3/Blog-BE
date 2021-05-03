@@ -1,5 +1,5 @@
 const models = require('../models')
-const { user, article } = models
+const { user, article, comment } = models
 const jwt = require('jsonwebtoken')
 
 const userController = {}
@@ -36,19 +36,19 @@ userController.signup = async (req, res) => {
 
 userController.login = async (req, res) => {
     try {
-        console.log('req body', req.body);
+        // console.log('req body', req.body);
         const foundUser = await user.findOne({
             where: {
                 email: req.body.email
             },
             include: article
         })
-        console.log('foundUser', foundUser.dataValues);
+        // console.log('foundUser', foundUser.dataValues);
         
         const encryptedId = jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
 
-        console.log('encryptedId', encryptedId);
-        console.log('foundUser', foundUser);
+        // console.log('encryptedId', encryptedId);
+        // console.log('foundUser', foundUser);
         if (foundUser.password === req.body.password) {
             res.json({
                 status: 200,
@@ -73,17 +73,21 @@ userController.login = async (req, res) => {
 userController.verify = async (req, res) => {
     try {
         let encryptedId = req.headers.authorization
+        // console.log('encryptedId', encryptedId);
         const decryptedId = await jwt.verify(encryptedId, process.env.JWT_SECRET)
 
         const foundUser = await user.findOne({
             where: {
-                id: decryptedId
+                id: decryptedId.userId
             },
-            include: article
+            include: [
+                {model: article},
+                {model: comment}
+            ]
         })
 
         encryptedId = jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
-
+        // console.log(foundUser, encryptedId);
         if (foundUser) {
             res.json({
                 status: 200,
@@ -105,6 +109,46 @@ userController.verify = async (req, res) => {
     }
 }
 
+userController.authorize = async (req, res) => {
+    try {
+        const encryptedId = req.headers.authorization
+        // console.log('encryptedId', encryptedId)
+        const decryptedId = await jwt.verify(encryptedId, process.env.JWT_SECRET)
+        // console.log('decryptedId', decryptedId);
+
+        let compare = null
+        if (req.body.articleId) {
+            const foundArticle = await article.findOne({
+                where: {
+                    id: req.body.articleId
+                }
+            })
+            compare = foundArticle.userId
+        }
+        
+        console.log('comparison', compare, decryptedId.userId);
+        if (compare === decryptedId.userId) {
+            res.json({
+                status: 200,
+                message: 'User authorized',
+                isOwner: true
+            })
+        } else {
+            res.json({
+                status: 400,
+                message: 'User not authorized',
+                isOwner: false
+            })
+        }
+    } catch (error) {
+        res.json({
+            status: 400,
+            message: 'Error in /user/authorize',
+            error
+        })
+    }
+}
+
 userController.update = async (req, res) => {
     try {
         // let encryptedId = req.headers.authorization
@@ -121,7 +165,7 @@ userController.update = async (req, res) => {
             email: req.body.email,
             password: req.body.password
         })
-        console.log('updatedUser', updatedUser);
+        // console.log('updatedUser', updatedUser);
 
         const encryptedId = jwt.sign({userId: updatedUser.id}, process.env.JWT_SECRET)
 
