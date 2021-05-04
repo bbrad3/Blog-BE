@@ -1,11 +1,15 @@
 const models = require('../models')
 const { user, article, comment } = models
 const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt')
+const salt = bcrypt.genSaltSync(10)
 
 const userController = {}
 
 userController.signup = async (req, res) => {
     try {
+        const hashedPassword = await bcrypt.hashSync(req.body.password, salt)
+        console.log('hashedPwd', hashedPassword);
         const [newUser, created] = await user.findOrCreate({
             where: {
                 email: req.body.email
@@ -13,13 +17,13 @@ userController.signup = async (req, res) => {
             defaults: {
                 name: req.body.name,
                 alias: req.body.alias,
-                password: req.body.password
+                password: hashedPassword
             }
         })
+        console.log('newUser', newUser, created);
 
         const encryptedId = jwt.sign({userId: newUser.id}, process.env.JWT_SECRET)
 
-        // console.log('newUser', newUser, created);
         res.json({
             status: 200,
             message: 'User created',
@@ -45,11 +49,13 @@ userController.login = async (req, res) => {
         })
         // console.log('foundUser', foundUser.dataValues);
         
-        const encryptedId = jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
+        // const match = await bcrypt.compareSync(req.body.password, foundUser.password)
+
+        const encryptedId = await jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
 
         // console.log('encryptedId', encryptedId);
         // console.log('foundUser', foundUser);
-        if (foundUser.password === req.body.password) {
+        if (req.body.password === foundUser.password) {
             res.json({
                 status: 200,
                 message: 'User authenticated',
@@ -65,6 +71,49 @@ userController.login = async (req, res) => {
         res.json({
             status: 400,
             message: 'Error in /user/login',
+            error
+        })
+    }
+}
+
+userController.top = async (req, res) => {
+    try {
+        const foundUsers = await user.findAll({
+            attributes: ['alias'],
+            include: [
+                {model: article},
+                {model: comment}
+            ],
+            order: [
+                ['name', 'ASC'],
+            ]
+        })
+
+        const sorted = foundUsers.sort((a, b) => {
+            let scoreA = (a.articles.length * 10) + a.comments.length
+            let scoreB = (b.articles.length * 10) + a.comments.length
+            if (scoreA < scoreB) {
+            return -1;
+            }
+            if (scoreA > scoreB) {
+            return 1;
+            }
+        
+            // articles.length must be equal
+            return 0;
+        })
+
+        const topThree = sorted.splice(0, 3)
+
+        res.json({
+            status: 200,
+            message: 'Sorted by name asc',
+            users: topThree,
+        })
+    } catch (error) {
+        res.json({
+            status: 400,
+            message: 'Error in /users/top',
             error
         })
     }
