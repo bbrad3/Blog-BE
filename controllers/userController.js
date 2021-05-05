@@ -2,13 +2,13 @@ const models = require('../models')
 const { user, article, comment } = models
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const salt = bcrypt.genSaltSync(10)
+const saltRounds = 10
 
 const userController = {}
 
 userController.signup = async (req, res) => {
     try {
-        const hashedPassword = await bcrypt.hashSync(req.body.password, salt)
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds)
         console.log('hashedPwd', hashedPassword);
         const [newUser, created] = await user.findOrCreate({
             where: {
@@ -47,15 +47,15 @@ userController.login = async (req, res) => {
             },
             include: article
         })
-        // console.log('foundUser', foundUser.dataValues);
+        console.log('match', req.body.password, foundUser.dataValues.password);
         
-        // const match = await bcrypt.compareSync(req.body.password, foundUser.password)
-
+        const match = await bcrypt.compare(req.body.password, foundUser.password)
+        console.log(match);
         const encryptedId = await jwt.sign({userId: foundUser.id}, process.env.JWT_SECRET)
 
         // console.log('encryptedId', encryptedId);
         // console.log('foundUser', foundUser);
-        if (req.body.password === foundUser.password) {
+        if (match) {
             res.json({
                 status: 200,
                 message: 'User authenticated',
